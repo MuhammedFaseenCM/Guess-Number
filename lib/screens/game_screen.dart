@@ -53,13 +53,13 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-     _hintManager = HintManager(apiKey: 'AIzaSyBSKCFuOJKpuGZaIx1g03DbBnKaUqNa9F8');
+    _hintManager =
+        HintManager(apiKey: 'AIzaSyBSKCFuOJKpuGZaIx1g03DbBnKaUqNa9F8');
     _setupControllers();
     _loadPreferences();
     _startNewGame();
     _hintService =
         HintService(apiKey: 'AIzaSyBSKCFuOJKpuGZaIx1g03DbBnKaUqNa9F8');
-       
   }
 
   void _setupControllers() {
@@ -106,7 +106,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     await prefs.setBool('isDarkMode', _isDarkMode);
   }
 
-void _startNewGame() {
+  void _startNewGame() {
     setState(() {
       _targetNumber = Random().nextInt(_difficulty.maxNumber) + 1;
       _message = 'Guess a number between 1 and ${_difficulty.maxNumber}';
@@ -118,11 +118,13 @@ void _startNewGame() {
     });
 
     // Preload hints
-    _hintManager.preloadHints(
+    _hintManager
+        .preloadHints(
       targetNumber: _targetNumber,
       maxNumber: _difficulty.maxNumber,
       difficulty: _difficulty.name,
-    ).then((_) {
+    )
+        .then((_) {
       setState(() {
         _isLoadingHints = false;
       });
@@ -137,12 +139,12 @@ void _startNewGame() {
       });
 
       final hint = _hintManager.getNextHint(
-_targetNumber,int.tryParse(_controller.text ) ?? 0
-      );
+          _targetNumber, int.tryParse(_controller.text) ?? 0);
 
       if (hint != null) {
         setState(() {
-          _message = 'HINT: $hint\n($_hintsRemaining hints remaining, +2 attempts penalty)';
+          _message =
+              'HINT: $hint\n($_hintsRemaining hints remaining, +2 attempts penalty)';
         });
         HapticFeedback.mediumImpact();
       } else {
@@ -162,25 +164,6 @@ _targetNumber,int.tryParse(_controller.text ) ?? 0
     }
   }
 
-  // Future<void> _playSound(String soundType) async {
-  //   try {
-  //     switch (soundType) {
-  //       case 'correct':
-  //         await _audioPlayer.setSource(AssetSource('sounds/correct.mp3'));
-  //         break;
-  //       case 'wrong':
-  //         await _audioPlayer.setSource(AssetSource('sounds/wrong.mp3'));
-  //         break;
-  //       case 'win':
-  //         await _audioPlayer.setSource(AssetSource('sounds/win.mp3'));
-  //         break;
-  //     }
-  //     await _audioPlayer.resume();
-  //   } catch (e) {
-  //     debugPrint('Error playing sound: $e');
-  //   }
-  // }
-
   void _checkGuess(String guess) {
     if (guess.isEmpty || _gameOver) return;
 
@@ -198,8 +181,10 @@ _targetNumber,int.tryParse(_controller.text ) ?? 0
 
     setState(() {
       _attempts++;
+      int difference = (userGuess - _targetNumber).abs();
+
       if (userGuess == _targetNumber) {
-        _message = 'Congratulations! You got it in $_attempts attempts!';
+        _message = 'Congratulations! You got it in $_attempts attempts! 🎉';
         _gameOver = true;
         _bounceController.forward().then((_) => _bounceController.reverse());
         _confettiController.play();
@@ -207,14 +192,42 @@ _targetNumber,int.tryParse(_controller.text ) ?? 0
         _saveHighScore(_attempts);
         HapticFeedback.heavyImpact();
       } else {
-        _message = userGuess < _targetNumber
-            ? 'Too low! Try again.'
-            : 'Too high! Try again.';
+        // Calculate how close the guess is as a percentage of the maximum number
+        double percentageOff = (difference / _difficulty.maxNumber) * 100;
+
+        if (difference <= 2) {
+          _message = 'You\'re burning hot! 🔥 So close!';
+          _playSound('very_close');
+        } else if (difference <= 5) {
+          _message = 'Getting very warm! 🌡️ Almost there!';
+          _playSound('close');
+        } else if (percentageOff <= 10) {
+          // If within 10% of the range
+          if (userGuess < _targetNumber) {
+            _message = 'Go higher! You\'re on the right track! 📈';
+          } else {
+            _message = 'Go lower! You\'re getting closer! 📉';
+          }
+          _playSound('wrong');
+        } else if (percentageOff <= 25) {
+          // If within 25% of the range
+          if (userGuess < _targetNumber) {
+            _message = 'Try a higher number! 👆';
+          } else {
+            _message = 'Try a lower number! 👇';
+          }
+          _playSound('wrong');
+        } else {
+          // If very far off
+          _message = 'You\'re way off! ❄️ Try again!';
+          _playSound('far');
+        }
+
         _shakeController.forward().then((_) => _shakeController.reverse());
-        _playSound('wrong');
         HapticFeedback.mediumImpact();
       }
     });
+
     _controller.clear();
   }
 
@@ -309,23 +322,23 @@ _targetNumber,int.tryParse(_controller.text ) ?? 0
             ),
           ),
           floatingActionButton: _hintsRemaining > 0 && !_gameOver
-        ? FloatingActionButton(
-            onPressed: _isLoadingHints ? null : _getHint,
-            backgroundColor: _isLoadingHints
-                ? Colors.grey
-                : (isDark ? darkPrimaryColor : primaryColor),
-            child: _isLoadingHints
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : const Icon(Icons.lightbulb_outline),
-          )
-        : null,
+              ? FloatingActionButton(
+                  onPressed: _isLoadingHints ? null : _getHint,
+                  backgroundColor: _isLoadingHints
+                      ? Colors.grey
+                      : (isDark ? darkPrimaryColor : primaryColor),
+                  child: _isLoadingHints
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.lightbulb_outline),
+                )
+              : null,
         ),
         Align(
           alignment: Alignment.topCenter,
@@ -351,124 +364,131 @@ _targetNumber,int.tryParse(_controller.text ) ?? 0
   }
 
   void _getBasicHint() {
-  int currentGuess = int.tryParse(_controller.text ?? '0') ?? 0;
-  String hint;
+    int currentGuess = int.tryParse(_controller.text) ?? 0;
+    String hint;
 
-  if (currentGuess == 0) {
-    // If no guess has been made yet, provide a range-based hint
-    if (_targetNumber <= _difficulty.maxNumber / 3) {
-      hint = 'The number is in the lower third of the range (1-${_difficulty.maxNumber ~/ 3})';
-    } else if (_targetNumber <= (_difficulty.maxNumber * 2 / 3)) {
-      hint = 'The number is in the middle third of the range (${_difficulty.maxNumber ~/ 3 + 1}-${(_difficulty.maxNumber * 2 ~/ 3)})';
-    } else {
-      hint = 'The number is in the upper third of the range (${(_difficulty.maxNumber * 2 ~/ 3) + 1}-${_difficulty.maxNumber})';
-    }
-  } else {
-    // If there's a current guess, provide a more specific hint
-    int difference = (_targetNumber - currentGuess).abs();
-    String direction = _targetNumber > currentGuess ? 'higher' : 'lower';
-    
-    if (difference <= 5) {
-      hint = 'Very close! The number is $direction by 1-5 numbers 🔥';
-    } else if (difference <= 10) {
-      hint = 'Almost there! The number is $direction by 6-10 numbers';
-    } else if (difference <= 20) {
-      hint = 'Getting warmer! The number is $direction by 11-20 numbers';
-    } else {
-      // Add some mathematical properties for more interesting hints
-      List<String> properties = [];
-      
-      // Check divisibility
-      if (_targetNumber % 2 == 0) {
-        properties.add('even');
+    if (currentGuess == 0) {
+      // If no guess has been made yet, provide a range-based hint
+      if (_targetNumber <= _difficulty.maxNumber / 3) {
+        hint =
+            'The number is in the lower third of the range (1-${_difficulty.maxNumber ~/ 3})';
+      } else if (_targetNumber <= (_difficulty.maxNumber * 2 / 3)) {
+        hint =
+            'The number is in the middle third of the range (${_difficulty.maxNumber ~/ 3 + 1}-${(_difficulty.maxNumber * 2 ~/ 3)})';
       } else {
-        properties.add('odd');
+        hint =
+            'The number is in the upper third of the range (${(_difficulty.maxNumber * 2 ~/ 3) + 1}-${_difficulty.maxNumber})';
       }
-      
-      if (_targetNumber % 5 == 0) {
-        properties.add('divisible by 5');
-      }
-      
-      if (properties.isNotEmpty) {
-        hint = 'The number is ${properties.join(' and ')} and $direction than your guess';
+    } else {
+      // If there's a current guess, provide a more specific hint
+      int difference = (_targetNumber - currentGuess).abs();
+      String direction = _targetNumber > currentGuess ? 'higher' : 'lower';
+
+      if (difference <= 5) {
+        hint = 'Very close! The number is $direction by 1-5 numbers 🔥';
+      } else if (difference <= 10) {
+        hint = 'Almost there! The number is $direction by 6-10 numbers';
+      } else if (difference <= 20) {
+        hint = 'Getting warmer! The number is $direction by 11-20 numbers';
       } else {
-        hint = 'The number is $direction than your guess by quite a bit';
+        // Add some mathematical properties for more interesting hints
+        List<String> properties = [];
+
+        // Check divisibility
+        if (_targetNumber % 2 == 0) {
+          properties.add('even');
+        } else {
+          properties.add('odd');
+        }
+
+        if (_targetNumber % 5 == 0) {
+          properties.add('divisible by 5');
+        }
+
+        if (properties.isNotEmpty) {
+          hint =
+              'The number is ${properties.join(' and ')} and $direction than your guess';
+        } else {
+          hint = 'The number is $direction than your guess by quite a bit';
+        }
       }
     }
+
+    setState(() {
+      _message =
+          'HINT: $hint\n($_hintsRemaining hints remaining, +2 attempts penalty)';
+    });
   }
 
-  setState(() {
-    _message = 'HINT: $hint\n($_hintsRemaining hints remaining, +2 attempts penalty)';
-  });
-}
+  void _handleHintError() {
+    setState(() {
+      if (_hintsRemaining <= 0) {
+        _message = 'No hints remaining! Try to solve it yourself 🎯';
+        // Add haptic feedback for error
+        HapticFeedback.heavyImpact();
+        // Play error sound if you have one
+        _playSound('error');
+      } else if (_gameOver) {
+        _message = 'Game is over! Start a new game to use hints 🎮';
+        HapticFeedback.mediumImpact();
+      } else {
+        _message = 'Cannot get hint right now. Try again later ⏳';
+        HapticFeedback.mediumImpact();
+      }
+    });
 
-void _handleHintError() {
-  setState(() {
-    if (_hintsRemaining <= 0) {
-      _message = 'No hints remaining! Try to solve it yourself 🎯';
-      // Add haptic feedback for error
-      HapticFeedback.heavyImpact();
-      // Play error sound if you have one
-      _playSound('error');
-    } else if (_gameOver) {
-      _message = 'Game is over! Start a new game to use hints 🎮';
-      HapticFeedback.mediumImpact();
-    } else {
-      _message = 'Cannot get hint right now. Try again later ⏳';
-      HapticFeedback.mediumImpact();
-    }
-  });
-
-  // Show a snackbar with more details
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Row(
-        children: [
-          Icon(
-            _hintsRemaining <= 0 ? Icons.lightbulb_outline : Icons.error_outline,
-            color: Colors.white,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
+    // Show a snackbar with more details
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
               _hintsRemaining <= 0
-                  ? 'You\'ve used all your hints! Each game gives you 3 hints.'
-                  : 'Unable to get hint. Please try again.',
-              style: const TextStyle(color: Colors.white),
+                  ? Icons.lightbulb_outline
+                  : Icons.error_outline,
+              color: Colors.white,
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                _hintsRemaining <= 0
+                    ? 'You\'ve used all your hints! Each game gives you 3 hints.'
+                    : 'Unable to get hint. Please try again.',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: _hintsRemaining <= 0 ? Colors.orange : Colors.red,
+        duration: const Duration(seconds: 3),
+        action: _hintsRemaining <= 0
+            ? SnackBarAction(
+                label: 'New Game',
+                textColor: Colors.white,
+                onPressed: _startNewGame,
+              )
+            : null,
       ),
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: _hintsRemaining <= 0 ? Colors.orange : Colors.red,
-      duration: const Duration(seconds: 3),
-      action: _hintsRemaining <= 0
-          ? SnackBarAction(
-              label: 'New Game',
-              textColor: Colors.white,
-              onPressed: _startNewGame,
-            )
-          : null,
-    ),
-  );
-}
+    );
+  }
 
 // Add this helper method to play sounds if you have them
-Future<void> _playSound(String soundType) async {
-  try {
-    switch (soundType) {
-      case 'error':
-        await _audioPlayer.setSource(AssetSource('sounds/error.mp3'));
-        break;
-      case 'hint':
-        await _audioPlayer.setSource(AssetSource('sounds/hint.mp3'));
-        break;
+  Future<void> _playSound(String soundType) async {
+    try {
+      switch (soundType) {
+        case 'error':
+          await _audioPlayer.setSource(AssetSource('sounds/error.mp3'));
+          break;
+        case 'hint':
+          await _audioPlayer.setSource(AssetSource('sounds/hint.mp3'));
+          break;
+      }
+      await _audioPlayer.resume();
+    } catch (e) {
+      debugPrint('Error playing sound: $e');
     }
-    await _audioPlayer.resume();
-  } catch (e) {
-    debugPrint('Error playing sound: $e');
   }
-}
 
   @override
   void dispose() {
