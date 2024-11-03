@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:guess_number/services/hint_manager.dart';
+import 'package:guess_number/utils/api_key.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:confetti/confetti.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -54,12 +55,12 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _hintManager =
-        HintManager(apiKey: 'AIzaSyBSKCFuOJKpuGZaIx1g03DbBnKaUqNa9F8');
+        HintManager(apiKey: googleApiKey);
     _setupControllers();
     _loadPreferences();
     _startNewGame();
     _hintService =
-        HintService(apiKey: 'AIzaSyBSKCFuOJKpuGZaIx1g03DbBnKaUqNa9F8');
+        HintService(apiKey: googleApiKey);
   }
 
   void _setupControllers() {
